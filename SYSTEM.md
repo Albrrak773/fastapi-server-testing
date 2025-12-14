@@ -1,0 +1,10 @@
+# HARDWARE
+MOTHERBOARD:
+CPU: AMD Ryzen 5 3600 (12) @ 4.21 GHz
+GPU: AMD Radeon RX 470 Graphics [Discrete]
+RAM: Crucial DDR4-2666MHz UDIMM CL19
+STORAGE: Colorful SL300 128GB
+
+# SOFTWARE
+Linux 6.17.9-arch1-1
+OS: Omarchy 3.2.2
