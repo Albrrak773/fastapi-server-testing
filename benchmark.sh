@@ -3,24 +3,30 @@
 
 set -euo pipefail
 
-SCRIPT_FILE="${1:-}"
-ENDPOINT="${2:-/words}"
-HEY_REQUESTS="${3:-200}"
-HEY_CONCURRENCY="${4:-50}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARSER="$SCRIPT_DIR/parse_args.sh"
+FORMATTER="$SCRIPT_DIR/format.sh"
 
-if [[ -z "$SCRIPT_FILE" ]]; then
-  echo "Usage: $0 <script.py> [endpoint] [requests] [concurrency]"
-  echo "Example: $0 non-async.py /words 200 50"
+# Check for required scripts
+if [[ ! -f "$PARSER" ]]; then
+  echo "Error: parse_args.sh not found in $SCRIPT_DIR" >&2
   exit 1
 fi
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FORMATTER="$SCRIPT_DIR/format.sh"
 
 if [[ ! -f "$FORMATTER" ]]; then
   echo "Error: format.sh not found in $SCRIPT_DIR" >&2
   exit 1
 fi
+
+# Parse arguments using the parser script
+source "$PARSER" "$@"
+
+# Use parsed values
+SCRIPT_FILE="$BENCH_SCRIPT_FILE"
+HOST="$BENCH_HOST"
+ENDPOINT="$BENCH_ENDPOINT"
+HEY_REQUESTS="$BENCH_REQUESTS"
+HEY_CONCURRENCY="$BENCH_CONCURRENCY"
 
 # Start server
 "$FORMATTER" status "Starting server: uv run $SCRIPT_FILE"
@@ -58,9 +64,9 @@ fi
 "$FORMATTER" status "Server started with PID: $PID"
 
 # Wait until endpoint ready
-"$FORMATTER" status "Waiting for server to be ready at http://localhost:8000$ENDPOINT"
+"$FORMATTER" status "Waiting for server to be ready at ${HOST}${ENDPOINT}"
 for _ in {1..100}; do
-  if curl -sSf "http://localhost:8000$ENDPOINT" >/dev/null 2>&1; then
+  if curl -sSf "${HOST}${ENDPOINT}" >/dev/null 2>&1; then
     break
   fi
   sleep 0.1
@@ -85,11 +91,11 @@ THREAD_LOG=$(mktemp)
 MONITOR_PID=$!
 
 # Run hey with live spinner
-"$FORMATTER" status "Running benchmark: hey -n $HEY_REQUESTS -c $HEY_CONCURRENCY"
+"$FORMATTER" status "Running benchmark: hey -n $HEY_REQUESTS -c $HEY_CONCURRENCY ${HOST}${ENDPOINT}"
 "$FORMATTER" progress_start
 HEY_OUTPUT=$(mktemp)
 set +e
-hey -n "$HEY_REQUESTS" -c "$HEY_CONCURRENCY" "http://localhost:8000$ENDPOINT" >"$HEY_OUTPUT" 2>&1
+hey -n "$HEY_REQUESTS" -c "$HEY_CONCURRENCY" "${HOST}${ENDPOINT}" >"$HEY_OUTPUT" 2>&1
 HEY_EXIT=$?
 set -e
 "$FORMATTER" progress_end
@@ -145,6 +151,7 @@ rm -f "$SERVER_LOG" "$HEY_OUTPUT" "$THREAD_LOG"
 # Print summary
 "$FORMATTER" summary \
   "$SCRIPT_FILE" \
+  "$HOST" \
   "$ENDPOINT" \
   "$HEY_REQUESTS" \
   "$HEY_CONCURRENCY" \
