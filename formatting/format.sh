@@ -63,6 +63,7 @@ summary() {
   local avg_ram="${19}"
   local max_ram="${20}"
   local num_workers="${21:-1}"
+  local status_codes="${22:-}"
 
   echo ""
   echo -e "${BOLD}${CYAN}╔═══════════════════════════════════════════════════════════════╗${RESET}"
@@ -86,9 +87,28 @@ summary() {
   echo -e "  ${BOLD}${BLUE}Slowest:${RESET}         ${BOLD}${RED}$slowest${RESET}"
   echo ""
 
-  echo -e "${CHART} ${BOLD}${BLUE}Request Summary${RESET}"
+  echo -e "${CHART} ${BOLD}${BLUE}Response Summary${RESET}"
   echo -e "  ${BOLD}${BLUE}Total data:${RESET}      ${BOLD}${total_data} MB${RESET}"
   echo -e "  ${BOLD}${BLUE}Size/request:${RESET}    ${BOLD}${size_req} MB${RESET}"
+  
+  # Display status code distribution if available
+  if [[ -n "$status_codes" ]]; then
+    echo -e "  ${BOLD}${BLUE}Status codes:${RESET}"
+    while IFS= read -r line; do
+      if [[ -n "$line" ]]; then
+        # Extract status code and count
+        local code=$(echo "$line" | sed -E 's/^[[:space:]]*\[([0-9]+)\].*/\1/')
+        local text=$(echo "$line" | sed -E 's/^[[:space:]]*\[[0-9]+\][[:space:]]*//')
+        
+        # Add appropriate emoji based on status code
+        if [[ "$code" =~ ^2[0-9]{2}$ ]]; then
+          echo -e "    ${BOLD}[${code}]${RESET} ${text}"
+        else
+          echo -e "    ${BOLD}[${code}]${RESET} ${text}"
+        fi
+      fi
+    done <<< "$status_codes"
+  fi
   echo ""
 
   echo -e "${CLOCK} ${BOLD}${YELLOW}Details (average, fastest, slowest)${RESET}"

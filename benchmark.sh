@@ -245,6 +245,9 @@ Req_write=$(grep -E "^  req write:" "$HEY_OUTPUT" | sed -E 's/^  req write:[[:sp
 Resp_wait=$(grep -E "^  resp wait:" "$HEY_OUTPUT" | sed -E 's/^  resp wait:[[:space:]]+//' || echo "N/A")
 Resp_read=$(grep -E "^  resp read:" "$HEY_OUTPUT" | sed -E 's/^  resp read:[[:space:]]+//' || echo "N/A")
 
+# Parse status code distribution
+Status_codes=$(awk '/^Status code distribution:/,/^$/ {if ($1 ~ /^\[/) print $0}' "$HEY_OUTPUT" || echo "")
+
 # Capture VmHWM (peak RAM) and thread count AFTER benchmark but BEFORE killing the server
 MAX_RAM_KB=0
 for pid in "${PID_ARRAY[@]}"; do
@@ -305,4 +308,5 @@ rm -f "$SERVER_LOG" "$HEY_OUTPUT" "$RAM_LOG"
   "$THREADS" \
   "$AVG_RAM" \
   "$MAX_RAM" \
-  "$NUM_WORKERS"
+  "$NUM_WORKERS" \
+  "$Status_codes"
