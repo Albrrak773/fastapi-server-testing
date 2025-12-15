@@ -90,7 +90,7 @@ summary() {
   local threads="${18}"
   local avg_ram="${19}"
   local max_ram="${20}"
-  local min_ram="${21}"
+  local num_workers="${21:-1}"
 
   echo ""
   echo -e "${BOLD}${CYAN}╔═══════════════════════════════════════════════════════════════╗${RESET}"
@@ -103,6 +103,7 @@ summary() {
   echo -e "  ${BOLD}${BLUE}URL:${RESET}          ${BOLD}${host}${endpoint}${RESET}"
   echo -e "  ${BOLD}${BLUE}Requests:${RESET}     ${BOLD}$requests${RESET}"
   echo -e "  ${BOLD}${BLUE}Concurrency:${RESET}  ${BOLD}$concurrency${RESET}"
+  echo -e "  ${BOLD}${BLUE}Workers:${RESET}      ${BOLD}$num_workers${RESET}"
   echo ""
 
   echo -e "${FIRE} ${BOLD}${GREEN}Performance Metrics${RESET}"
@@ -127,24 +128,26 @@ summary() {
   echo ""
 
   echo -e "${THREAD} ${BOLD}${MAGENTA}Thread Usage${RESET}"
-  echo -e "  ${BOLD}${BLUE}Total Threads Spawned:${RESET} ${BOLD}$threads${RESET}"
+  if [[ "$num_workers" -gt 1 ]]; then
+    echo -e "  ${BOLD}${BLUE}Total Threads (${num_workers} workers):${RESET} ${BOLD}$threads${RESET}"
+  else
+    echo -e "  ${BOLD}${BLUE}Total Threads:${RESET} ${BOLD}$threads${RESET}"
+  fi
   echo ""
 
-  echo -e "💾 ${BOLD}${MAGENTA}Memory Usage (MB)${RESET}"
+  echo -e "💾 ${BOLD}${MAGENTA}Memory Usage${RESET}"
+  if [[ "$num_workers" -gt 1 ]]; then
+    echo -e "  ${YELLOW}(aggregated across $num_workers workers)${RESET}"
+  fi
   if [[ "$avg_ram" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
     printf "  ${BOLD}${BLUE}Average:${RESET}     ${BOLD}%.2f MB${RESET}\n" "$avg_ram"
   else
     echo -e "  ${BOLD}${BLUE}Average:${RESET}     ${BOLD}$avg_ram${RESET}"
   fi
-  if [[ "$min_ram" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-    printf "  ${BOLD}${BLUE}Min:${RESET}         ${BOLD}%.2f MB${RESET}\n" "$min_ram"
-  else
-    echo -e "  ${BOLD}${BLUE}Min:${RESET}         ${BOLD}$min_ram${RESET}"
-  fi
   if [[ "$max_ram" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-    printf "  ${BOLD}${BLUE}Max:${RESET}         ${BOLD}%.2f MB${RESET}\n" "$max_ram"
+    printf "  ${BOLD}${BLUE}Peak:${RESET}        ${BOLD}%.2f MB${RESET}\n" "$max_ram"
   else
-    echo -e "  ${BOLD}${BLUE}Max:${RESET}         ${BOLD}$max_ram${RESET}"
+    echo -e "  ${BOLD}${BLUE}Peak:${RESET}        ${BOLD}$max_ram${RESET}"
   fi
   echo ""
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════════${RESET}"
